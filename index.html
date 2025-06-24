@@ -127,7 +127,7 @@
       document.querySelectorAll("input").forEach(i => i.value = "");
     }
 
-    async function submitToGoogleSheet(actionType) {
+async function submitToGoogleSheet(actionType) {
   const idPrefix = (actionType === "PUT IN") ? "putin" : "takeout";
   const time = document.getElementById(idPrefix + "Time").value;
   const qty = document.getElementById(idPrefix + "Qty").value;
@@ -137,28 +137,33 @@
     return;
   }
 
-  const expiryDateOnly = time.substring(0, 10); // 🟢 只保留 yyyy-mm-dd
+  const expiryDateOnly = time.substring(0, 10);
 
   const payload = {
-    action: actionType,       // "PUT IN" or "TAKE OUT"
-    item: currentItem,        // 食物名稱
-    quantity: qty,            // 數量
-    expiry: expiryDateOnly    // 過期日期（不含時間）
+    action: actionType,
+    item: currentItem,
+    quantity: qty,
+    expiry: expiryDateOnly
   };
+
+  const formBody = Object.entries(payload)
+    .map(([key, val]) => `${encodeURIComponent(key)}=${encodeURIComponent(val)}`)
+    .join("&");
 
   try {
     const res = await fetch(scriptURL, {
       method: "POST",
-      body: JSON.stringify(payload),
       headers: {
-        "Content-Type": "application/json"
-      }
+        "Content-Type": "application/x-www-form-urlencoded"
+      },
+      body: formBody
     });
 
     const result = await res.json();
     if (result.status === "success") {
       alert("資料已寫入 Google Sheet！");
       cancelForm();
+      gotoPage("home");
     } else {
       alert("寫入失敗：" + result.message);
     }
