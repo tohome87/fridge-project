@@ -2,175 +2,160 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Fridge Tracker</title>
   <style>
     body {
       font-family: "Segoe UI", sans-serif;
-      margin: 0;
-      padding: 0;
+      max-width: 500px;
+      margin: 2rem auto;
       background: #f4f7fa;
       color: #333;
-    }
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
-      padding: 2rem;
       text-align: center;
     }
-    h1, h2, h3 {
-      margin-bottom: 1rem;
-    }
     button {
+      margin: 8px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: none;
       background: #007bff;
       color: white;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 20px;
       font-size: 16px;
-      margin: 8px;
       cursor: pointer;
     }
     button:hover {
       background: #0056b3;
     }
     input {
-      padding: 8px;
-      margin: 5px;
       width: 80%;
+      padding: 8px;
+      margin: 5px 0;
       font-size: 16px;
     }
     .page { display: none; }
     .active { display: block; }
-    .item-buttons button {
-      width: 40%;
-    }
-    .form-section {
-      margin-top: 1rem;
-    }
   </style>
 </head>
 <body>
-  <div class="container">
-    <!-- Home Page -->
-    <div id="home" class="page active">
-      <h1>Fridge App</h1>
-      <button onclick="gotoPage('putin')">PUT IN</button>
-      <button onclick="gotoPage('takeout')">TAKE OUT</button>
-    </div>
 
-    <!-- PUT IN Page -->
-    <div id="putin" class="page">
-      <h2>Put In Items</h2>
-      <div class="item-buttons" id="putinItems"></div>
-      <div class="form-section" id="putinForm" style="display:none;">
-        <h3 id="putinSelected"></h3>
-        <input type="datetime-local" id="putinTime"><br>
-        <input type="number" id="putinQty" placeholder="Quantity"><br>
-        <button onclick="submitToGoogleSheet('PUT IN')">OK</button>
-        <button onclick="cancelForm()">Cancel</button>
-      </div>
-      <button onclick="gotoPage('home')">Back</button>
-    </div>
-
-    <!-- TAKE OUT Page -->
-    <div id="takeout" class="page">
-      <h2>Take Out Items</h2>
-      <div class="item-buttons" id="takeoutItems"></div>
-      <div class="form-section" id="takeoutForm" style="display:none;">
-        <h3 id="takeoutSelected"></h3>
-        <input type="datetime-local" id="takeoutTime"><br>
-        <input type="number" id="takeoutQty" placeholder="Quantity"><br>
-        <button onclick="submitToGoogleSheet('TAKE OUT')">OK</button>
-        <button onclick="cancelForm()">Cancel</button>
-      </div>
-      <button onclick="gotoPage('home')">Back</button>
-    </div>
+  <div id="home" class="page active">
+    <h1>Fridge App</h1>
+    <button onclick="gotoPage('putin')">PUT IN</button>
+    <button onclick="gotoPage('takeout')">TAKE OUT</button>
   </div>
 
-  <script>
-    const items = ["Milk", "Cheese", "Eggs", "Yogurt"];
-    const scriptURL = "https://script.google.com/macros/s/AKfycbzwpjpz9u-rxW29kNd5bU0TtJ1LehyeZk_FWWYMw9ea1YaPLaWTudey5FqsZ8lywzgX/exec";
+  <div id="putin" class="page">
+    <h2>Put In Items</h2>
+    <div id="putinItems"></div>
+    <div id="putinForm" style="display:none;">
+      <h3 id="putinSelected"></h3>
+      <input type="datetime-local" id="putinTime"><br>
+      <input type="number" id="putinQty" placeholder="Quantity"><br>
+      <button onclick="submitToGoogleSheet('PUT IN')">OK</button>
+      <button onclick="cancelForm()">Cancel</button>
+    </div>
+    <button onclick="gotoPage('home')">Back</button>
+  </div>
 
-    let currentAction = "";
-    let currentItem = "";
+  <div id="takeout" class="page">
+    <h2>Take Out Items</h2>
+    <div id="takeoutItems"></div>
+    <div id="takeoutForm" style="display:none;">
+      <h3 id="takeoutSelected"></h3>
+      <input type="datetime-local" id="takeoutTime"><br>
+      <input type="number" id="takeoutQty" placeholder="Quantity"><br>
+      <button onclick="submitToGoogleSheet('TAKE OUT')">OK</button>
+      <button onclick="cancelForm()">Cancel</button>
+    </div>
+    <button onclick="gotoPage('home')">Back</button>
+  </div>
 
-    function gotoPage(page) {
-      document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-      document.getElementById(page).classList.add("active");
+<script>
+  const items = ["Milk", "Cheese", "Eggs", "Yogurt"];
+  const scriptURL = "https://script.google.com/macros/s/AKfycbzwpjpz9u-rxW29kNd5bU0TtJ1LehyeZk_FWWYMw9ea1YaPLaWTudey5FqsZ8lywzgX/exec";
 
-      if (page === "putin") loadItemButtons("putin");
-      if (page === "takeout") loadItemButtons("takeout");
+  let currentItem = "";
+
+  function gotoPage(page) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(page).classList.add("active");
+
+    if (page === "putin") loadItemButtons("putin");
+    if (page === "takeout") loadItemButtons("takeout");
+
+    cancelForm();
+  }
+
+  function loadItemButtons(action) {
+    const container = document.getElementById(action + "Items");
+    container.innerHTML = "";
+    items.forEach(item => {
+      const btn = document.createElement("button");
+      btn.textContent = item;
+      btn.onclick = () => showForm(action, item);
+      container.appendChild(btn);
+    });
+  }
+
+  function showForm(action, item) {
+    currentItem = item;
+    document.getElementById(action + "Selected").textContent = `${action.toUpperCase().replace(/^\w/, c => c.toUpperCase())}: ${item}`;
+    document.getElementById(action + "Form").style.display = "block";
+  }
+
+  function cancelForm() {
+    document.querySelectorAll(".form-section, #putinForm, #takeoutForm").forEach(f => {
+      if(f) f.style.display = "none";
+    });
+    document.querySelectorAll("input").forEach(i => i.value = "");
+  }
+
+  async function submitToGoogleSheet(actionType) {
+    const idPrefix = actionType === "PUT IN" ? "putin" : "takeout";
+    const time = document.getElementById(idPrefix + "Time").value;
+    const qty = document.getElementById(idPrefix + "Qty").value;
+
+    if (!time || !qty) {
+      alert("請填入時間與數量！");
+      return;
     }
 
-    function loadItemButtons(action) {
-      const container = document.getElementById(action + "Items");
-      container.innerHTML = "";
-      items.forEach(item => {
-        const btn = document.createElement("button");
-        btn.textContent = item;
-        btn.onclick = () => showForm(action, item);
-        container.appendChild(btn);
+    const expiryDateOnly = time.substring(0, 10);
+
+    const payload = {
+      action: actionType,
+      item: currentItem,
+      quantity: qty,
+      expiry: expiryDateOnly
+    };
+
+    // 組裝 x-www-form-urlencoded 格式字串
+    const formBody = Object.entries(payload)
+      .map(([key, val]) => encodeURIComponent(key) + "=" + encodeURIComponent(val))
+      .join("&");
+
+    try {
+      const res = await fetch(scriptURL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded"
+        },
+        body: formBody
       });
-    }
 
-    function showForm(action, item) {
-      currentAction = action.toUpperCase() === "PUTIN" ? "PUT IN" : "TAKE OUT";
-      currentItem = item;
+      const result = await res.json();
 
-      document.getElementById(action + "Selected").textContent = `${currentAction}: ${item}`;
-      document.getElementById(action + "Form").style.display = "block";
-    }
-
-    function cancelForm() {
-      document.querySelectorAll(".form-section").forEach(f => f.style.display = "none");
-      document.querySelectorAll("input").forEach(i => i.value = "");
-    }
-
-    async function submitToGoogleSheet(actionType) {
-      const idPrefix = (actionType === "PUT IN") ? "putin" : "takeout";
-      const time = document.getElementById(idPrefix + "Time").value;
-      const qty = document.getElementById(idPrefix + "Qty").value;
-
-      if (!time || !qty) {
-        alert("請填入時間與數量！");
-        return;
+      if (result.status === "success") {
+        alert("資料已寫入 Google Sheet！");
+        cancelForm();
+        gotoPage("home");
+      } else {
+        alert("寫入失敗：" + result.message);
       }
-
-      const expiryDateOnly = time.substring(0, 10);
-
-      const payload = {
-        action: actionType,
-        item: currentItem,
-        quantity: qty,
-        expiry: expiryDateOnly
-      };
-
-      const formBody = Object.entries(payload)
-        .map(([key, val]) => `${encodeURIComponent(key)}=${encodeURIComponent(val)}`)
-        .join("&");
-
-      try {
-        const res = await fetch(scriptURL, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded"
-          },
-          body: formBody
-        });
-
-        const result = await res.json();
-        if (result.status === "success") {
-          alert("資料已寫入 Google Sheet！");
-          cancelForm();
-          gotoPage("home");
-        } else {
-          alert("寫入失敗：" + result.message);
-        }
-      } catch (err) {
-        alert("錯誤：" + err.message);
-      }
+    } catch (err) {
+      alert("錯誤：" + err.message);
     }
-  </script>
+  }
+</script>
+
 </body>
 </html>
