@@ -90,7 +90,7 @@
 
   <script>
     const items = ["Milk", "Cheese", "Eggs", "Yogurt"];
-  const scriptURL = "https://script.google.com/macros/s/AKfycbzwpjpz9u-rxW29kNd5bU0TtJ1LehyeZk_FWWYMw9ea1YaPLaWTudey5FqsZ8lywzgX/exec";
+    const scriptURL = "https://script.google.com/macros/s/AKfycbzwpjpz9u-rxW29kNd5bU0TtJ1LehyeZk_FWWYMw9ea1YaPLaWTudey5FqsZ8lywzgX/exec";
 
     let currentAction = "";
     let currentItem = "";
@@ -127,51 +127,50 @@
       document.querySelectorAll("input").forEach(i => i.value = "");
     }
 
-async function submitToGoogleSheet(actionType) {
-  const idPrefix = (actionType === "PUT IN") ? "putin" : "takeout";
-  const time = document.getElementById(idPrefix + "Time").value;
-  const qty = document.getElementById(idPrefix + "Qty").value;
+    async function submitToGoogleSheet(actionType) {
+      const idPrefix = (actionType === "PUT IN") ? "putin" : "takeout";
+      const time = document.getElementById(idPrefix + "Time").value;
+      const qty = document.getElementById(idPrefix + "Qty").value;
 
-  if (!time || !qty) {
-    alert("請填入時間與數量！");
-    return;
-  }
+      if (!time || !qty) {
+        alert("請填入時間與數量！");
+        return;
+      }
 
-  const expiryDateOnly = time.substring(0, 10);
+      const expiryDateOnly = time.substring(0, 10);
 
-  const payload = {
-    action: actionType,
-    item: currentItem,
-    quantity: qty,
-    expiry: expiryDateOnly
-  };
+      const payload = {
+        action: actionType,
+        item: currentItem,
+        quantity: qty,
+        expiry: expiryDateOnly
+      };
 
-  const formBody = Object.entries(payload)
-    .map(([key, val]) => `${encodeURIComponent(key)}=${encodeURIComponent(val)}`)
-    .join("&");
+      const formBody = Object.entries(payload)
+        .map(([key, val]) => `${encodeURIComponent(key)}=${encodeURIComponent(val)}`)
+        .join("&");
 
-  try {
-    const res = await fetch(scriptURL, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: formBody
-    });
+      try {
+        const res = await fetch(scriptURL, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded"
+          },
+          body: formBody
+        });
 
-    const result = await res.json();
-    if (result.status === "success") {
-      alert("資料已寫入 Google Sheet！");
-      cancelForm();
-      gotoPage("home");
-    } else {
-      alert("寫入失敗：" + result.message);
+        const result = await res.json();
+        if (result.status === "success") {
+          alert("資料已寫入 Google Sheet！");
+          cancelForm();
+          gotoPage("home");
+        } else {
+          alert("寫入失敗：" + result.message);
+        }
+      } catch (err) {
+        alert("錯誤：" + err.message);
+      }
     }
-  } catch (err) {
-    alert("錯誤：" + err.message);
-  }
-}
-
   </script>
 </body>
 </html>
