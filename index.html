@@ -48,7 +48,7 @@
     <div id="putinItems"></div>
     <div id="putinForm" style="display:none;">
       <h3 id="putinSelected"></h3>
-      <input type="datetime-local" id="putinTime"><br>
+      <input type="date" id="putinDate" min=""><br>
       <input type="number" id="putinQty" placeholder="Quantity"><br>
       <button onclick="submitToGoogleSheet('PUT IN')">OK</button>
       <button onclick="cancelForm()">Cancel</button>
@@ -71,7 +71,7 @@
 
 <script>
   const items = ["Milk", "Cheese", "Eggs", "Yogurt"];
-  const scriptURL = "https://script.google.com/macros/s/AKfycbygp-8wTN-d_3bjwH4enaDreTQX_BmDfllc5nQnnq1Y1W2QslKNwHdTINhIhFcV_fp4/exec";
+  const scriptURL = "你的 Google Apps Script Web App URL 填這裡";
 
   let currentItem = "";
 
@@ -79,7 +79,12 @@
     document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
     document.getElementById(page).classList.add("active");
 
-    if (page === "putin") loadItemButtons("putin");
+    if (page === "putin") {
+      loadItemButtons("putin");
+      const putinDate = document.getElementById("putinDate");
+      const today = new Date().toISOString().split("T")[0];
+      putinDate.min = today;
+    }
     if (page === "takeout") loadItemButtons("takeout");
 
     cancelForm();
@@ -103,41 +108,44 @@
   }
 
   function cancelForm() {
-    document.querySelectorAll(".form-section, #putinForm, #takeoutForm").forEach(f => {
-      if(f) f.style.display = "none";
-    });
+    document.querySelectorAll("#putinForm, #takeoutForm").forEach(f => f.style.display = "none");
     document.querySelectorAll("input").forEach(i => i.value = "");
   }
 
   async function submitToGoogleSheet(actionType) {
     const idPrefix = actionType === "PUT IN" ? "putin" : "takeout";
-    const time = document.getElementById(idPrefix + "Time").value;
-    const qty = document.getElementById(idPrefix + "Qty").value;
 
-    if (!time || !qty) {
-      alert("請填入時間與數量！");
-      return;
+    let expiry = "";
+    if (actionType === "PUT IN") {
+      expiry = document.getElementById("putinDate").value;  // 日期 yyyy-mm-dd
+    } else {
+      expiry = document.getElementById(idPrefix + "Time").value.substring(0, 10);
     }
 
-    const expiryDateOnly = time.substring(0, 10);
+    const qty = document.getElementById(idPrefix + "Qty").value;
+
+    if (!expiry || !qty) {
+      alert("請填入日期與數量！");
+      return;
+    }
 
     const payload = {
       action: actionType,
       item: currentItem,
       quantity: qty,
-      expiry: expiryDateOnly
+      expiry: expiry
     };
 
-    // 組裝 x-www-form-urlencoded 格式字串
-   const formBody = Object.entries(payload)
-  .map(([key, val]) => encodeURIComponent(key) + "=" + encodeURIComponent(val))
-  .join("&");
+    const formBody = Object.entries(payload)
+      .map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v))
+      .join("&");
 
-fetch(scriptURL, {
-  method: "POST",
-  headers: { "Content-Type": "application/x-www-form-urlencoded" },
-  body: formBody,
-});
+    try {
+      const res = await fetch(scriptURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formBody,
+      });
 
       const result = await res.json();
 
