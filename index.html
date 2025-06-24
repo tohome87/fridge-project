@@ -61,10 +61,17 @@
 <body>
 
   <div id="home" class="page active">
-    <h1>Fridge App</h1>
-    <button onclick="gotoPage('putin')">PUT IN</button>
-    <button onclick="gotoPage('takeout')">TAKE OUT</button>
+  <h1>Fridge App</h1>
+  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+    <img src="putin.png" alt="Put In" title="Put In" onclick="gotoPage('putin')"
+         style="width:140px; height:140px; border-radius:12px; cursor:pointer; transition: transform 0.2s;"
+         onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+
+    <img src="takeout.png" alt="Take Out" title="Take Out" onclick="gotoPage('takeout')"
+         style="width:140px; height:140px; border-radius:12px; cursor:pointer; transition: transform 0.2s;"
+         onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
   </div>
+</div>
 
   <div id="putin" class="page">
     <h2>Put In Items</h2>
