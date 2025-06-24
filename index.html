@@ -12,6 +12,26 @@
       color: #333;
       text-align: center;
     }
+
+    .item-btn {
+      display: inline-block;
+      margin: 10px;
+      cursor: pointer;
+    }
+
+    .item-btn img {
+      width: 100px;
+      height: 100px;
+      border-radius: 12px;
+      border: 2px solid transparent;
+      transition: transform 0.2s, border 0.2s;
+    }
+
+    .item-btn img:hover {
+      transform: scale(1.1);
+      border-color: #007bff;
+    }
+
     button {
       margin: 8px;
       padding: 10px 20px;
@@ -22,15 +42,18 @@
       font-size: 16px;
       cursor: pointer;
     }
+
     button:hover {
       background: #0056b3;
     }
+
     input {
       width: 80%;
       padding: 8px;
       margin: 5px 0;
       font-size: 16px;
     }
+
     .page { display: none; }
     .active { display: block; }
   </style>
@@ -70,7 +93,13 @@
   </div>
 
 <script>
-  const items = ["Milk", "Cheese", "Eggs", "Yogurt"];
+  const items = [
+    { name: "Milk", img: "milk.png" },
+    { name: "Cheese", img: "cheese.png" },
+    { name: "Eggs", img: "egg.png" },
+    { name: "Yogurt", img: "yogurt.png" }
+  ];
+
   const scriptURL = "https://script.google.com/macros/s/AKfycbzes1otW4KSJA-9ZU_Kcj8bMTf3IrXw2KtreKVkUaFuw6sJicHHiiJ3YvsaHQvjocax/exec";
 
   let currentItem = "";
@@ -85,6 +114,7 @@
       const today = new Date().toISOString().split("T")[0];
       putinDate.min = today;
     }
+
     if (page === "takeout") loadItemButtons("takeout");
 
     cancelForm();
@@ -93,17 +123,18 @@
   function loadItemButtons(action) {
     const container = document.getElementById(action + "Items");
     container.innerHTML = "";
-    items.forEach(item => {
-      const btn = document.createElement("button");
-      btn.textContent = item;
-      btn.onclick = () => showForm(action, item);
-      container.appendChild(btn);
+    items.forEach(({ name, img }) => {
+      const div = document.createElement("div");
+      div.className = "item-btn";
+      div.innerHTML = `<img src="${img}" alt="${name}" title="${name}">`;
+      div.onclick = () => showForm(action, name);
+      container.appendChild(div);
     });
   }
 
   function showForm(action, item) {
     currentItem = item;
-    document.getElementById(action + "Selected").textContent = `${action.toUpperCase().replace(/^\w/, c => c.toUpperCase())}: ${item}`;
+    document.getElementById(action + "Selected").textContent = `${action.toUpperCase()}: ${item}`;
     document.getElementById(action + "Form").style.display = "block";
   }
 
@@ -117,7 +148,7 @@
 
     let expiry = "";
     if (actionType === "PUT IN") {
-      expiry = document.getElementById("putinDate").value;  // 日期 yyyy-mm-dd
+      expiry = document.getElementById("putinDate").value;
     } else {
       expiry = document.getElementById(idPrefix + "Time").value.substring(0, 10);
     }
