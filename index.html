@@ -60,19 +60,21 @@
 </head>
 <body>
 
+  <!-- 主畫面 -->
   <div id="home" class="page active">
-  <h1>Fridge App</h1>
-  <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
-    <img src="putin.png" alt="Put In" title="Put In" onclick="gotoPage('putin')"
-         style="width:140px; height:140px; border-radius:12px; cursor:pointer; transition: transform 0.2s;"
-         onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+    <h1>Fridge App</h1>
+    <div style="display: flex; justify-content: center; gap: 20px; flex-wrap: wrap;">
+      <img src="putin.png" alt="Put In" title="Put In" onclick="gotoPage('putin')"
+           style="width:140px; height:140px; border-radius:12px; cursor:pointer; transition: transform 0.2s;"
+           onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
 
-    <img src="takeout.png" alt="Take Out" title="Take Out" onclick="gotoPage('takeout')"
-         style="width:140px; height:140px; border-radius:12px; cursor:pointer; transition: transform 0.2s;"
-         onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+      <img src="takeout.png" alt="Take Out" title="Take Out" onclick="gotoPage('takeout')"
+           style="width:140px; height:140px; border-radius:12px; cursor:pointer; transition: transform 0.2s;"
+           onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
+    </div>
   </div>
-</div>
 
+  <!-- PUT IN 頁面 -->
   <div id="putin" class="page">
     <h2>Put In Items</h2>
     <div id="putinItems"></div>
@@ -86,14 +88,19 @@
     <button onclick="gotoPage('home')">Back</button>
   </div>
 
-  <div id="takeoutForm" style="display:none;">
-  <h3 id="takeoutSelected"></h3>
-  <input type="date" id="takeoutDate" min=""><br>
-  <input type="number" id="takeoutQty" placeholder="Quantity"><br>
-  <button onclick="submitToGoogleSheet('TAKE OUT')">OK</button>
-  <button onclick="cancelForm()">Cancel</button>
-</div>
-
+  <!-- TAKE OUT 頁面 -->
+  <div id="takeout" class="page">
+    <h2>Take Out Items</h2>
+    <div id="takeoutItems"></div>
+    <div id="takeoutForm" style="display:none;">
+      <h3 id="takeoutSelected"></h3>
+      <input type="date" id="takeoutDate" min=""><br>
+      <input type="number" id="takeoutQty" placeholder="Quantity"><br>
+      <button onclick="submitToGoogleSheet('TAKE OUT')">OK</button>
+      <button onclick="cancelForm()">Cancel</button>
+    </div>
+    <button onclick="gotoPage('home')">Back</button>
+  </div>
 
 <script>
   const items = [
@@ -104,27 +111,26 @@
   ];
 
   const scriptURL = "https://script.google.com/macros/s/AKfycbzes1otW4KSJA-9ZU_Kcj8bMTf3IrXw2KtreKVkUaFuw6sJicHHiiJ3YvsaHQvjocax/exec";
-
   let currentItem = "";
 
- function gotoPage(page) {
-  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-  document.getElementById(page).classList.add("active");
+  function gotoPage(page) {
+    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+    document.getElementById(page).classList.add("active");
 
-  const today = new Date().toISOString().split("T")[0];
+    const today = new Date().toISOString().split("T")[0];
 
-  if (page === "putin") {
-    loadItemButtons("putin");
-    document.getElementById("putinDate").min = today;
+    if (page === "putin") {
+      loadItemButtons("putin");
+      document.getElementById("putinDate").min = today;
+    }
+
+    if (page === "takeout") {
+      loadItemButtons("takeout");
+      document.getElementById("takeoutDate").min = today;
+    }
+
+    cancelForm();
   }
-
-  if (page === "takeout") {
-    loadItemButtons("takeout");
-    document.getElementById("takeoutDate").min = today;
-  }
-
-  cancelForm();
-}
 
   function loadItemButtons(action) {
     const container = document.getElementById(action + "Items");
@@ -149,54 +155,53 @@
     document.querySelectorAll("input").forEach(i => i.value = "");
   }
 
-async function submitToGoogleSheet(actionType) {
-  let expiry = "";
-  let qty = "";
+  async function submitToGoogleSheet(actionType) {
+    let expiry = "", qty = "";
 
-  if (actionType === "PUT IN") {
-    expiry = document.getElementById("putinDate").value;
-    qty = document.getElementById("putinQty").value;
-  } else {
-    expiry = document.getElementById("takeoutDate").value;
-    qty = "-" + Math.abs(document.getElementById("takeoutQty").value); // ✅ 強制為負數
-  }
-
-  if (!expiry || !qty || qty === "-") {
-    alert("請填入日期與數量！");
-    return;
-  }
-
-  const payload = {
-    action: actionType,
-    item: currentItem,
-    quantity: qty,
-    expiry: expiry
-  };
-
-  const formBody = Object.entries(payload)
-    .map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v))
-    .join("&");
-
-  try {
-    const res = await fetch(scriptURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: formBody,
-    });
-
-    const result = await res.json();
-
-    if (result.status === "success") {
-      alert("資料已寫入 Google Sheet！");
-      cancelForm();
-      gotoPage("home");
+    if (actionType === "PUT IN") {
+      expiry = document.getElementById("putinDate").value;
+      qty = document.getElementById("putinQty").value;
     } else {
-      alert("寫入失敗：" + result.message);
+      expiry = document.getElementById("takeoutDate").value;
+      qty = "-" + Math.abs(document.getElementById("takeoutQty").value);  // ✅ 負數
     }
-  } catch (err) {
-    alert("錯誤：" + err.message);
+
+    if (!expiry || !qty || qty === "-") {
+      alert("請填入日期與數量！");
+      return;
+    }
+
+    const payload = {
+      action: actionType,
+      item: currentItem,
+      quantity: qty,
+      expiry: expiry
+    };
+
+    const formBody = Object.entries(payload)
+      .map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v))
+      .join("&");
+
+    try {
+      const res = await fetch(scriptURL, {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: formBody,
+      });
+
+      const result = await res.json();
+
+      if (result.status === "success") {
+        alert("資料已寫入 Google Sheet！");
+        cancelForm();
+        gotoPage("home");
+      } else {
+        alert("寫入失敗：" + result.message);
+      }
+    } catch (err) {
+      alert("錯誤：" + err.message);
+    }
   }
-}
 </script>
 
 </body>
