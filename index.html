@@ -86,18 +86,14 @@
     <button onclick="gotoPage('home')">Back</button>
   </div>
 
-  <div id="takeout" class="page">
-    <h2>Take Out Items</h2>
-    <div id="takeoutItems"></div>
-    <div id="takeoutForm" style="display:none;">
-      <h3 id="takeoutSelected"></h3>
-      <input type="datetime-local" id="takeoutTime"><br>
-      <input type="number" id="takeoutQty" placeholder="Quantity"><br>
-      <button onclick="submitToGoogleSheet('TAKE OUT')">OK</button>
-      <button onclick="cancelForm()">Cancel</button>
-    </div>
-    <button onclick="gotoPage('home')">Back</button>
-  </div>
+  <div id="takeoutForm" style="display:none;">
+  <h3 id="takeoutSelected"></h3>
+  <input type="date" id="takeoutDate" min=""><br>
+  <input type="number" id="takeoutQty" placeholder="Quantity"><br>
+  <button onclick="submitToGoogleSheet('TAKE OUT')">OK</button>
+  <button onclick="cancelForm()">Cancel</button>
+</div>
+
 
 <script>
   const items = [
@@ -111,21 +107,24 @@
 
   let currentItem = "";
 
-  function gotoPage(page) {
-    document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
-    document.getElementById(page).classList.add("active");
+ function gotoPage(page) {
+  document.querySelectorAll(".page").forEach(p => p.classList.remove("active"));
+  document.getElementById(page).classList.add("active");
 
-    if (page === "putin") {
-      loadItemButtons("putin");
-      const putinDate = document.getElementById("putinDate");
-      const today = new Date().toISOString().split("T")[0];
-      putinDate.min = today;
-    }
+  const today = new Date().toISOString().split("T")[0];
 
-    if (page === "takeout") loadItemButtons("takeout");
-
-    cancelForm();
+  if (page === "putin") {
+    loadItemButtons("putin");
+    document.getElementById("putinDate").min = today;
   }
+
+  if (page === "takeout") {
+    loadItemButtons("takeout");
+    document.getElementById("takeoutDate").min = today;
+  }
+
+  cancelForm();
+}
 
   function loadItemButtons(action) {
     const container = document.getElementById(action + "Items");
@@ -150,54 +149,54 @@
     document.querySelectorAll("input").forEach(i => i.value = "");
   }
 
-  async function submitToGoogleSheet(actionType) {
-    const idPrefix = actionType === "PUT IN" ? "putin" : "takeout";
+async function submitToGoogleSheet(actionType) {
+  let expiry = "";
+  let qty = "";
 
-    let expiry = "";
-    if (actionType === "PUT IN") {
-      expiry = document.getElementById("putinDate").value;
-    } else {
-      expiry = document.getElementById(idPrefix + "Time").value.substring(0, 10);
-    }
-
-    const qty = document.getElementById(idPrefix + "Qty").value;
-
-    if (!expiry || !qty) {
-      alert("請填入日期與數量！");
-      return;
-    }
-
-    const payload = {
-      action: actionType,
-      item: currentItem,
-      quantity: qty,
-      expiry: expiry
-    };
-
-    const formBody = Object.entries(payload)
-      .map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v))
-      .join("&");
-
-    try {
-      const res = await fetch(scriptURL, {
-        method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: formBody,
-      });
-
-      const result = await res.json();
-
-      if (result.status === "success") {
-        alert("資料已寫入 Google Sheet！");
-        cancelForm();
-        gotoPage("home");
-      } else {
-        alert("寫入失敗：" + result.message);
-      }
-    } catch (err) {
-      alert("錯誤：" + err.message);
-    }
+  if (actionType === "PUT IN") {
+    expiry = document.getElementById("putinDate").value;
+    qty = document.getElementById("putinQty").value;
+  } else {
+    expiry = document.getElementById("takeoutDate").value;
+    qty = "-" + Math.abs(document.getElementById("takeoutQty").value); // ✅ 強制為負數
   }
+
+  if (!expiry || !qty || qty === "-") {
+    alert("請填入日期與數量！");
+    return;
+  }
+
+  const payload = {
+    action: actionType,
+    item: currentItem,
+    quantity: qty,
+    expiry: expiry
+  };
+
+  const formBody = Object.entries(payload)
+    .map(([k, v]) => encodeURIComponent(k) + "=" + encodeURIComponent(v))
+    .join("&");
+
+  try {
+    const res = await fetch(scriptURL, {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: formBody,
+    });
+
+    const result = await res.json();
+
+    if (result.status === "success") {
+      alert("資料已寫入 Google Sheet！");
+      cancelForm();
+      gotoPage("home");
+    } else {
+      alert("寫入失敗：" + result.message);
+    }
+  } catch (err) {
+    alert("錯誤：" + err.message);
+  }
+}
 </script>
 
 </body>
